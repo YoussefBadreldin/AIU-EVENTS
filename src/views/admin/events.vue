@@ -303,7 +303,7 @@
                 <polyline points="7 10 12 15 17 10"></polyline>
                 <line x1="12" y1="15" x2="12" y2="3"></line>
               </svg>
-              Export to CSV
+              Export Data
             </button>
             <button @click="closeParticipantsModal" class="cancel-btn">Close</button>
           </div>

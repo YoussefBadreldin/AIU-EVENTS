@@ -13,22 +13,47 @@
       />
 
       <!-- Event Details Modal -->
-      <div v-if="selectedEvent" class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
+      <div v-if="selectedEvent" class="modal fade show" v-show="showModal" style="display: block" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
           <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title" id="eventModalLabel">{{ selectedEvent.title }}</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              <button type="button" class="btn-close" @click="closeModal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
               <p><strong>Description:</strong> {{ selectedEvent.description }}</p>
               <p><strong>Date:</strong> {{ selectedEvent.start }}</p>
-              <ul>
-                <li v-for="(participant, index) in selectedEvent.participants" :key="index">{{ participant }}</li>
-              </ul>
+              <div v-if="selectedEvent.participants && selectedEvent.participants.length > 0">
+                <p><strong>Current Participants:</strong></p>
+                <ul>
+                  <li v-for="(participant, index) in selectedEvent.participants" :key="index">{{ participant }}</li>
+                </ul>
+              </div>
+              
+              <!-- Registration Form -->
+              <div class="registration-form mt-4">
+                <h6>Register for this Event</h6>
+                <form @submit.prevent="handleRegistration">
+                  <div class="form-group mb-3">
+                    <label for="studentId">Student ID:</label>
+                    <input 
+                      type="text" 
+                      class="form-control" 
+                      id="studentId" 
+                      v-model="registrationId"
+                      required
+                      placeholder="Enter your student ID"
+                    />
+                  </div>
+                  <div v-if="registrationMessage" :class="['alert', registrationSuccess ? 'alert-success' : 'alert-danger']">
+                    {{ registrationMessage }}
+                  </div>
+                  <button type="submit" class="btn btn-primary">Register</button>
+                </form>
+              </div>
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              <button type="button" class="btn btn-secondary" @click="closeModal">Close</button>
             </div>
           </div>
         </div>
@@ -44,7 +69,6 @@ import FooterComponent from '../../../public/global/footerComponent.vue';
 import FullCalendar from '@fullcalendar/vue3'; // Updated for Vue 3
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { Modal } from 'bootstrap'; // For Bootstrap modal
 
 export default {
   name: 'ElectionCalendar',
@@ -74,6 +98,10 @@ export default {
         eventContent: this.renderEventContent, // Custom event content renderer
       },
       selectedEvent: null, // Selected event for modal
+      registrationId: '', // Student ID for registration
+      registrationMessage: '', // Message to show after registration attempt
+      registrationSuccess: false, // Whether registration was successful
+      showModal: false, // Control modal visibility
     };
   },
   mounted() {
@@ -109,13 +137,63 @@ export default {
     // Handle event click (show event details in a modal)
     handleEventClick(info) {
       this.selectedEvent = {
+        id: info.event.id,
         title: info.event.title,
         start: info.event.start.toLocaleString(),
         description: info.event.extendedProps.description,
-        participants: info.event.extendedProps.participants,
+        participants: info.event.extendedProps.participants || [],
       };
-      const modal = new Modal(document.getElementById('eventModal'));
-      modal.show();
+      this.registrationId = ''; // Reset registration form
+      this.registrationMessage = ''; // Reset registration message
+      this.showModal = true; // Show the modal
+    },
+
+    // Close modal
+    closeModal() {
+      this.showModal = false;
+      this.selectedEvent = null;
+    },
+
+    // Handle event registration
+    async handleRegistration() {
+      if (!this.registrationId.trim()) {
+        this.registrationMessage = 'Please enter your student ID';
+        this.registrationSuccess = false;
+        return;
+      }
+
+      try {
+        const response = await fetch(`https://aiusu-backend.vercel.app/events/${this.selectedEvent.id}/register`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            studentId: this.registrationId.trim(),
+          }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          this.registrationMessage = 'Successfully registered for the event!';
+          this.registrationSuccess = true;
+          // Update the event's participants list
+          if (!this.selectedEvent.participants) {
+            this.selectedEvent.participants = [];
+          }
+          this.selectedEvent.participants.push(this.registrationId);
+          // Refresh the events list
+          this.fetchEvents();
+        } else {
+          this.registrationMessage = data.message || 'Failed to register for the event';
+          this.registrationSuccess = false;
+        }
+      } catch (error) {
+        console.error('Error registering for event:', error);
+        this.registrationMessage = 'An error occurred while registering. Please try again.';
+        this.registrationSuccess = false;
+      }
     },
 
     // Custom event content renderer

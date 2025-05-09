@@ -54,19 +54,6 @@
                 <span>{{ selectedEvent.description }}</span>
               </div>
             </div>
-
-            <div v-if="selectedEvent.participants && selectedEvent.participants.length > 0" class="participants-section">
-              <h4>Current Participants</h4>
-              <div class="participants-list">
-                <div v-for="(participant, index) in selectedEvent.participants" :key="index" class="participant-item">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
-                  <span>{{ participant }}</span>
-                </div>
-              </div>
-            </div>
             
             <!-- Registration Form -->
             <div class="registration-form">
@@ -85,15 +72,25 @@
                 <div v-if="registrationMessage" :class="['notification', registrationSuccess ? 'success' : 'error']">
                   {{ registrationMessage }}
                 </div>
-                <button type="submit" class="register-btn">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="8.5" cy="7" r="4"></circle>
-                    <line x1="20" y1="8" x2="20" y2="14"></line>
-                    <line x1="23" y1="11" x2="17" y2="11"></line>
-                  </svg>
-                  Register
-                </button>
+                <div class="button-group">
+                  <button type="submit" class="register-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="8.5" cy="7" r="4"></circle>
+                      <line x1="20" y1="8" x2="20" y2="14"></line>
+                      <line x1="23" y1="11" x2="17" y2="11"></line>
+                    </svg>
+                    Register
+                  </button>
+                  <button type="button" @click="exportToExcel" class="export-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="7 10 12 15 17 10"></polyline>
+                      <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Export to Excel
+                  </button>
+                </div>
               </form>
             </div>
           </div>
@@ -152,7 +149,7 @@ export default {
     // Fetch events from the database
     async fetchEvents() {
       try {
-        const response = await fetch('https://aiusu-backend.vercel.app/events');
+        const response = await fetch('https://aiu-events-backend.vercel.app/events');
         if (!response.ok) throw new Error('Failed to fetch events');
         const events = await response.json();
 
@@ -207,21 +204,21 @@ export default {
 
       try {
         // First, get student data
-        const studentResponse = await fetch('https://aiusu-backend.vercel.app/sdata');
+        const studentResponse = await fetch('https://aiu-events-backend.vercel.app/sdata');
         if (!studentResponse.ok) throw new Error('Failed to fetch student data');
         
         const students = await studentResponse.json();
         const student = students.find(s => s.student_id === this.registrationId.trim());
         
         if (!student) {
-          this.registrationMessage = 'Student ID not found';
+          this.registrationMessage = 'Student ID not Correct';
           this.registrationSuccess = false;
           return;
         }
 
         // Then, add participant to event
         const response = await fetch(
-          `https://aiusu-backend.vercel.app/events/${this.selectedEvent.id}/participants`,
+          `https://aiu-events-backend.vercel.app/events/${this.selectedEvent.id}/participants`,
           {
             method: 'POST',
             headers: {
@@ -269,6 +266,33 @@ export default {
       return {
         html: `<div class="event-title">${eventInfo.event.title}</div>`, // Add a class for styling
       };
+    },
+
+    async exportToExcel() {
+      if (!this.selectedEvent) return;
+      
+      try {
+        const response = await fetch(
+          `https://aiu-events-backend.vercel.app/events/${this.selectedEvent.id}/export`
+        );
+        
+        if (!response.ok) throw new Error('Failed to export participants');
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${this.selectedEvent.title}_participants.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        this.showNotification('Participants exported successfully');
+      } catch (error) {
+        console.error('Error exporting participants:', error);
+        this.showNotification('Failed to export participants', 'error');
+      }
     },
   },
 };
@@ -483,10 +507,20 @@ export default {
   box-shadow: 0 0 0 3px rgba(15, 16, 108, 0.1);
 }
 
+.button-group {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
 .register-btn {
-  width: 100%;
+  flex: 1;
+}
+
+.export-btn {
+  flex: 1;
   padding: 0.75rem;
-  background-color: #0f106c;
+  background-color: #28a745;
   color: white;
   border: none;
   border-radius: 6px;
@@ -499,8 +533,8 @@ export default {
   transition: all 0.3s ease;
 }
 
-.register-btn:hover {
-  background-color: #0c0d5a;
+.export-btn:hover {
+  background-color: #218838;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }

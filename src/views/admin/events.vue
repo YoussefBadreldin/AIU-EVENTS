@@ -435,7 +435,7 @@ export default {
     async loadEvents() {
       this.isLoading = true;
       try {
-        const response = await fetch('https://aiusu-backend.vercel.app/events');
+        const response = await fetch('https://aiu-events-backend.vercel.app/events');
         if (!response.ok) throw new Error('Failed to fetch events');
         const events = await response.json();
         this.events = events;
@@ -465,7 +465,7 @@ export default {
     async addParticipant() {
       if (this.newParticipant.studentId && this.selectedEvent) {
         try {
-          const response = await fetch('https://aiusu-backend.vercel.app/sdata');
+          const response = await fetch('https://aiu-events-backend.vercel.app/sdata');
           if (!response.ok) throw new Error('Failed to fetch student data');
           
           const students = await response.json();
@@ -476,7 +476,7 @@ export default {
           }
 
           const participantResponse = await fetch(
-            `https://aiusu-backend.vercel.app/events/${this.selectedEvent._id}/participants`,
+            `https://aiu-events-backend.vercel.app/events/${this.selectedEvent._id}/participants`,
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -503,7 +503,7 @@ export default {
           this.showNotification('Student added successfully');
         } catch (error) {
           console.error('Error adding participant:', error);
-          this.showNotification('Failed to add student', 'error');
+          this.showNotification('Participant is already Registered', 'error');
         }
       }
     },
@@ -512,7 +512,7 @@ export default {
         try {
           const participant = this.selectedEvent.participants[index];
           const response = await fetch(
-            `https://aiusu-backend.vercel.app/events/${this.selectedEvent._id}/participants`,
+            `https://aiu-events-backend.vercel.app/events/${this.selectedEvent._id}/participants`,
             {
               method: 'DELETE',
               headers: { 'Content-Type': 'application/json' },
@@ -542,8 +542,8 @@ export default {
       this.loading = true;
       try {
         const url = this.isEditing
-          ? `https://aiusu-backend.vercel.app/events/${this.currentEvent._id}`
-          : 'https://aiusu-backend.vercel.app/events';
+          ? `https://aiu-events-backend.vercel.app/events/${this.currentEvent._id}`
+          : 'https://aiu-events-backend.vercel.app/events';
         const method = this.isEditing ? 'PUT' : 'POST';
 
         const response = await fetch(url, {
@@ -593,7 +593,7 @@ export default {
       if (!this.eventToDelete) return;
       
       try {
-        const response = await fetch(`https://aiusu-backend.vercel.app/events/${this.eventToDelete._id}`, {
+        const response = await fetch(`https://aiu-events-backend.vercel.app/events/${this.eventToDelete._id}`, {
           method: 'DELETE',
         });
 
@@ -635,7 +635,7 @@ export default {
       
       try {
         const response = await fetch(
-          `https://aiusu-backend.vercel.app/events/${this.selectedEvent._id}/export`
+          `https://aiu-events-backend.vercel.app/events/${this.selectedEvent._id}/export`
         );
         
         if (!response.ok) throw new Error('Failed to export participants');

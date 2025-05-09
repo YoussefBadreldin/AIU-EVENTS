@@ -68,7 +68,7 @@ export default {
       this.isAuthenticated = sessionStorage.getItem('isAuthenticated') === 'true';
     },
     handleLogin() {
-      if (this.username === 'admin' && this.password === 'AIU_su20##25') {
+      if (this.username === 'admin' && this.password === 'admin') {
         this.isAuthenticated = true;
         this.errorMessage = '';
         sessionStorage.setItem('isAuthenticated', 'true');

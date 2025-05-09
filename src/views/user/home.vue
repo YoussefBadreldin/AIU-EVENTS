@@ -152,21 +152,23 @@ export default {
     // Fetch events from the database
     async fetchEvents() {
       try {
-        const response = await fetch('https://aiusu-backend.vercel.app/events'); // Fetch from localhost:3000
+        const response = await fetch('https://aiusu-backend.vercel.app/events');
         if (!response.ok) throw new Error('Failed to fetch events');
         const events = await response.json();
 
         // Map events to FullCalendar's expected format
         this.calendarOptions.events = events.map(event => ({
-          title: event.eventName, // Use eventName from your backend
-          start: event.eventDate, // Use eventDate from your backend
+          id: event._id,
+          title: event.eventName,
+          start: event.eventDate,
           extendedProps: {
-            description: event.eventDescription, // Use eventDescription from your backend
+            description: event.eventDescription,
+            participants: event.participants
           },
         }));
       } catch (error) {
         console.error('Error fetching events:', error);
-        alert('Failed to load events. Please try again later.');
+        this.showNotification('Failed to load events', 'error');
       }
     },
 
@@ -184,9 +186,9 @@ export default {
         description: info.event.extendedProps.description,
         participants: info.event.extendedProps.participants || [],
       };
-      this.registrationId = ''; // Reset registration form
-      this.registrationMessage = ''; // Reset registration message
-      this.showModal = true; // Show the modal
+      this.registrationId = '';
+      this.registrationMessage = '';
+      this.showModal = true;
     },
 
     // Close modal
@@ -204,37 +206,62 @@ export default {
       }
 
       try {
-        const response = await fetch(`https://aiusu-backend.vercel.app/events/${this.selectedEvent.id}/register`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            studentId: this.registrationId.trim(),
-          }),
-        });
+        // First, get student data
+        const studentResponse = await fetch('https://aiusu-backend.vercel.app/sdata');
+        if (!studentResponse.ok) throw new Error('Failed to fetch student data');
+        
+        const students = await studentResponse.json();
+        const student = students.find(s => s.student_id === this.registrationId.trim());
+        
+        if (!student) {
+          this.registrationMessage = 'Student ID not found';
+          this.registrationSuccess = false;
+          return;
+        }
+
+        // Then, add participant to event
+        const response = await fetch(
+          `https://aiusu-backend.vercel.app/events/${this.selectedEvent.id}/participants`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              studentId: student.student_id,
+              name: student.student_name,
+              major: student.student_faculty
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.message || 'Failed to register for the event');
+        }
 
         const data = await response.json();
-
-        if (response.ok) {
-          this.registrationMessage = 'Successfully registered for the event!';
-          this.registrationSuccess = true;
-          // Update the event's participants list
-          if (!this.selectedEvent.participants) {
-            this.selectedEvent.participants = [];
-          }
-          this.selectedEvent.participants.push(this.registrationId);
-          // Refresh the events list
-          this.fetchEvents();
-        } else {
-          this.registrationMessage = data.message || 'Failed to register for the event';
-          this.registrationSuccess = false;
-        }
+        this.registrationMessage = 'Successfully registered for the event!';
+        this.registrationSuccess = true;
+        
+        // Update the event's participants list
+        this.selectedEvent.participants = data.event.participants;
+        
+        // Refresh the events list
+        this.fetchEvents();
       } catch (error) {
         console.error('Error registering for event:', error);
-        this.registrationMessage = 'An error occurred while registering. Please try again.';
+        this.registrationMessage = error.message || 'An error occurred while registering. Please try again.';
         this.registrationSuccess = false;
       }
+    },
+
+    showNotification(message, type = 'success') {
+      this.notificationMessage = message;
+      this.notificationType = type;
+      setTimeout(() => {
+        this.notificationMessage = '';
+      }, 3000);
     },
 
     // Custom event content renderer

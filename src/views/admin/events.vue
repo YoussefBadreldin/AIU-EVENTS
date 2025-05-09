@@ -97,7 +97,7 @@
                 <polyline points="12 6 12 12 16 14"></polyline>
               </svg>
               Today
-            </button>
+              </button>
           </div>
 
               <!-- Events Table -->
@@ -438,32 +438,7 @@ export default {
         const response = await fetch('https://aiusu-backend.vercel.app/events');
         if (!response.ok) throw new Error('Failed to fetch events');
         const events = await response.json();
-        
-        // Fetch all student data
-        const studentResponse = await fetch('https://aiusu-backend.vercel.app/sdata');
-        if (!studentResponse.ok) throw new Error('Failed to fetch student data');
-        const allStudents = await studentResponse.json();
-        
-        // Process each event to get participant details
-        const processedEvents = await Promise.all(events.map(async (event) => {
-          // Get participant details for each ID
-          const participantDetails = event.participants.map(studentId => {
-            const student = allStudents.find(s => s.student_id === studentId);
-            return {
-              studentId: studentId,
-              name: student ? student.student_name : 'Unknown',
-              major: student ? student.student_faculty : 'Unknown'
-            };
-          });
-
-          return {
-            ...event,
-            participants: participantDetails,
-            showParticipants: false
-          };
-        }));
-
-        this.events = processedEvents;
+        this.events = events;
       } catch (error) {
         console.error('Error loading events:', error);
         this.showNotification('Failed to load events', 'error');
@@ -500,11 +475,23 @@ export default {
             throw new Error('Student not found');
           }
 
-          this.selectedEvent.participants.push({
-            studentId: student.student_id,
-            name: student.student_name,
-            major: student.student_faculty
-          });
+          const participantResponse = await fetch(
+            `https://aiusu-backend.vercel.app/events/${this.selectedEvent._id}/participants`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                studentId: student.student_id,
+                name: student.student_name,
+                major: student.student_faculty
+              }),
+            }
+          );
+
+          if (!participantResponse.ok) throw new Error('Failed to add participant');
+
+          const updatedEvent = await participantResponse.json();
+          this.selectedEvent = updatedEvent.event;
           
           // Update the event in the main list
           const eventIndex = this.events.findIndex(e => e._id === this.selectedEvent._id);
@@ -520,13 +507,34 @@ export default {
         }
       }
     },
-    removeParticipant(index) {
+    async removeParticipant(index) {
       if (this.selectedEvent) {
-        this.selectedEvent.participants.splice(index, 1);
-        // Update the event in the main list
-        const eventIndex = this.events.findIndex(e => e._id === this.selectedEvent._id);
-        if (eventIndex !== -1) {
-          this.events[eventIndex] = { ...this.selectedEvent };
+        try {
+          const participant = this.selectedEvent.participants[index];
+          const response = await fetch(
+            `https://aiusu-backend.vercel.app/events/${this.selectedEvent._id}/participants`,
+            {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ studentId: participant.studentId }),
+            }
+          );
+
+          if (!response.ok) throw new Error('Failed to remove participant');
+
+          const updatedEvent = await response.json();
+          this.selectedEvent = updatedEvent.event;
+          
+          // Update the event in the main list
+          const eventIndex = this.events.findIndex(e => e._id === this.selectedEvent._id);
+          if (eventIndex !== -1) {
+            this.events[eventIndex] = { ...this.selectedEvent };
+          }
+
+          this.showNotification('Participant removed successfully');
+        } catch (error) {
+          console.error('Error removing participant:', error);
+          this.showNotification('Failed to remove participant', 'error');
         }
       }
     },
@@ -541,7 +549,11 @@ export default {
         const response = await fetch(url, {
           method,
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(this.currentEvent),
+          body: JSON.stringify({
+            eventName: this.currentEvent.eventName,
+            eventDescription: this.currentEvent.eventDescription,
+            eventDate: this.currentEvent.eventDate
+          }),
         });
 
         if (!response.ok) throw new Error('Failed to save event');
@@ -580,14 +592,17 @@ export default {
     async confirmDelete() {
       if (!this.eventToDelete) return;
       
-        try {
-        await fetch(`https://aiusu-backend.vercel.app/events/${this.eventToDelete._id}`, {
+      try {
+        const response = await fetch(`https://aiusu-backend.vercel.app/events/${this.eventToDelete._id}`, {
           method: 'DELETE',
-          });
+        });
+
+        if (!response.ok) throw new Error('Failed to delete event');
+
         this.events = this.events.filter((e) => e._id !== this.eventToDelete._id);
         this.showNotification('Event deleted successfully');
         this.closeDeleteModal();
-        } catch (error) {
+      } catch (error) {
         console.error('Error deleting event:', error);
         this.showNotification('Failed to delete event', 'error');
       }
@@ -615,28 +630,31 @@ export default {
       this.selectedEvent = null;
       this.newParticipant.studentId = '';
     },
-    exportParticipants() {
+    async exportParticipants() {
       if (!this.selectedEvent) return;
       
-      const headers = ['Student ID', 'Name', 'Faculty'];
-      const csvContent = [
-        headers.join(','),
-        ...this.selectedEvent.participants.map(p => 
-          [p.studentId, p.name, p.major].join(',')
-        )
-      ].join('\n');
-      
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      
-      link.setAttribute('href', url);
-      link.setAttribute('download', `${this.selectedEvent.eventName}_participants.csv`);
-      link.style.visibility = 'hidden';
-      
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      try {
+        const response = await fetch(
+          `https://aiusu-backend.vercel.app/events/${this.selectedEvent._id}/export`
+        );
+        
+        if (!response.ok) throw new Error('Failed to export participants');
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${this.selectedEvent.eventName}_participants.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        this.showNotification('Participants exported successfully');
+      } catch (error) {
+        console.error('Error exporting participants:', error);
+        this.showNotification('Failed to export participants', 'error');
+      }
     },
     previousMonth() {
       const newDate = new Date(this.currentDate);

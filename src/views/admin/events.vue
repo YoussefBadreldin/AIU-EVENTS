@@ -1,160 +1,343 @@
 <template>
-  <div>
+  <div class="modern-admin">
     <HeaderComponent />
 
-    <!-- Admin Panel Section -->
-    <div class="About-Us">
-      <div class="inner-lay">
-        <div class="container">
-          <div class="row justify-content-center">
-            <div class="col-lg-12 col-md-12 mb-3">
-              <h3 class="mt-4">Events Dashboard</h3>
+    <!-- Notification Section -->
+    <div v-if="notification.message" class="notification-box">
+      <div :class="['notification', notification.type]">
+        {{ notification.message }}
+      </div>
+    </div>
 
-              <!-- Filters -->
-              <div class="filters mb-4">
+    <div class="admin-container">
+      <div class="admin-header">
+        <h1 class="page-title">Events Management</h1>
+        <p class="page-subtitle">Alamein International University</p>
+      </div>
+
+      <div v-if="isLoading" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Loading...</p>
+      </div>
+
+      <!-- Content -->
+      <div v-else>
+        <!-- Events Management Section -->
+        <div class="registrations-section">
+          <div class="section-header">
+            <h3 class="section-title">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              Events Table
+            </h3>
+            
+            <!-- Add Event Button -->
+            <button @click="openAddEventModal" class="add-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Add New Event
+            </button>
+          </div>
+
+          <!-- Filters -->
+          <div class="filters">
+            <div class="filter-group">
+              <label for="filter-event-name" class="filter-label">Event Name</label>
+              <input
+                type="text"
+                v-model="filterEventName"
+                id="filter-event-name"
+                class="filter-input"
+                placeholder="Search by event name"
+              />
+            </div>
+            
+            <div class="filter-group">
+              <label for="filter-event-date" class="filter-label">Date</label>
+              <input
+                type="date"
+                v-model="filterEventDate"
+                id="filter-event-date"
+                class="filter-input"
+              />
+            </div>
+            
+            <button @click="resetFilters" class="reset-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="1 4 1 10 7 10"></polyline>
+                <polyline points="23 20 23 14 17 14"></polyline>
+                <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+              </svg>
+              Reset
+            </button>
+          </div>
+
+          <!-- Month Selector -->
+          <div class="month-selector">
+            <button @click="previousMonth" class="month-nav-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+            <h3 class="current-month">{{ currentMonthDisplay }}</h3>
+            <button @click="nextMonth" class="month-nav-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Events Table -->
+          <div class="table-container">
+            <table class="registrations-table">
+              <thead>
+                <tr>
+                  <th>Event Name</th>
+                  <th>Description</th>
+                  <th>Date</th>
+                  <th>Participants</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="event in currentMonthEvents" :key="event._id">
+                  <td>{{ event.eventName }}</td>
+                  <td>{{ event.eventDescription }}</td>
+                  <td>{{ formatDate(event.eventDate) }}</td>
+                  <td>
+                    <button @click="openParticipantsModal(event)" class="view-participants-btn">
+                      View Participants ({{ event.participants.length }})
+                    </button>
+                  </td>
+                  <td class="actions-col">
+                    <button @click="editEvent(event)" class="edit-btn">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                      </svg>
+                      Edit
+                    </button>
+                    <button @click="deleteEvent(event)" class="delete-btn">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      </svg>
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div v-if="currentMonthEvents.length === 0" class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <p>No events found</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add/Edit Event Modal -->
+      <div v-if="showEventModal" class="modal-overlay">
+        <div class="modal-container">
+          <div class="modal-header">
+            <h3 class="modal-title">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              {{ isEditing ? "Edit Event" : "Add New Event" }}
+            </h3>
+            <button @click="closeEventModal" class="close-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          
+          <div class="modal-body">
+            <form @submit.prevent="saveEvent">
+              <div class="form-group">
+                <label for="eventName">Event Name</label>
                 <input
                   type="text"
-                  v-model="filterEventName"
-                  placeholder="Search by event name"
-                  class="form-control mb-2"
-                />
-                <input
-                  type="date"
-                  v-model="filterEventDate"
-                  class="form-control mb-2"
+                  v-model="currentEvent.eventName"
+                  id="eventName"
+                  class="form-control"
+                  required
                 />
               </div>
+              
+              <div class="form-group">
+                <label for="eventDescription">Description</label>
+                <textarea
+                  v-model="currentEvent.eventDescription"
+                  id="eventDescription"
+                  class="form-control"
+                  required
+                ></textarea>
+              </div>
+              
+              <div class="form-group">
+                <label for="eventDate">Date and Time</label>
+                <input
+                  type="datetime-local"
+                  v-model="currentEvent.eventDate"
+                  id="eventDate"
+                  class="form-control"
+                  required
+                />
+              </div>
+            </form>
+          </div>
+          
+          <div class="modal-footer">
+            <button @click="closeEventModal" class="cancel-btn">Cancel</button>
+            <button @click="saveEvent" class="save-btn">
+              <span v-if="loading" class="spinner"></span>
+              <span v-else>{{ isEditing ? "Save Changes" : "Add Event" }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
-              <!-- Add Event Button -->
-              <button @click="openAddEventModal" class="btn btn-primary mb-3">
-                Add New Event
-              </button>
+      <!-- Participants Management Modal -->
+      <div v-if="showParticipantsModal" class="modal-overlay">
+        <div class="modal-container">
+          <div class="modal-header">
+            <h3 class="modal-title">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+              Participants Management - {{ selectedEvent?.eventName }}
+            </h3>
+            <button @click="closeParticipantsModal" class="close-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          
+          <div class="modal-body">
+            <!-- Add Participant Section -->
+            <div class="add-participant-section">
+              <div class="participants-input">
+                <input
+                  type="text"
+                  v-model="newParticipant.studentId"
+                  class="form-control"
+                  placeholder="Enter Student ID"
+                />
+                <button
+                  type="button"
+                  @click="addParticipant"
+                  class="add-participant-btn"
+                >
+                  Add Participant
+                </button>
+              </div>
+            </div>
 
-              <!-- Events Table -->
-              <table class="table">
+            <!-- Participants Table -->
+            <div class="participants-table-container">
+              <table class="participants-table">
                 <thead>
                   <tr>
-                    <th>Event Name</th>
-                    <th>Description</th>
-                    <th>Date</th>
-                    <th>Participants</th>
-                    <th>Actions</th>
+                    <th>Student ID</th>
+                    <th>Name</th>
+                    <th>Faculty</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="event in filteredEvents" :key="event._id">
-                    <td>{{ event.eventName }}</td>
-                    <td>{{ event.eventDescription }}</td>
-                    <td>{{ formatDate(event.eventDate) }}</td>
-                    <td>
-                      <ul>
-                        <li v-for="(participant, index) in event.participants" :key="index">
-                          {{ participant }}
-                        </li>
-                      </ul>
-                    </td>
+                  <tr v-for="(participant, index) in selectedEvent?.participants" :key="index">
+                    <td>{{ participant.studentId }}</td>
+                    <td>{{ participant.name }}</td>
+                    <td>{{ participant.major }}</td>
                     <td>
                       <button
-                        @click="editEvent(event)"
-                        class="btn btn-primary"
+                        type="button"
+                        @click="removeParticipant(index)"
+                        class="remove-participant-btn"
                       >
-                        Edit
-                      </button>
-                      <button
-                        @click="deleteEvent(event)"
-                        class="btn btn-danger"
-                      >
-                        Delete
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
                       </button>
                     </td>
                   </tr>
                 </tbody>
               </table>
-
-              <!-- Logout Button -->
-              <button
-                v-if="isAuthenticated"
-                class="custom-btn logout-btn"
-                @click="logout"
-              >
-                Sign Out
-              </button>
             </div>
+          </div>
+          
+          <div class="modal-footer">
+            <button @click="exportParticipants" class="export-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              Export to CSV
+            </button>
+            <button @click="closeParticipantsModal" class="cancel-btn">Close</button>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Add/Edit Event Modal -->
-    <div v-if="showEventModal" class="modal fade show" style="display: block">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
+      <!-- Delete Confirmation Modal -->
+      <div v-if="showDeleteModal" class="modal-overlay">
+        <div class="modal-container delete-modal">
           <div class="modal-header">
-            <h5 class="modal-title">
-              {{ isEditing ? "Edit Event" : "Add New Event" }}
-            </h5>
-            <button type="button" class="btn-close" @click="closeEventModal"></button>
+            <h3 class="modal-title">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              Delete Event
+            </h3>
+            <button @click="closeDeleteModal" class="close-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
           </div>
+          
           <div class="modal-body">
-            <form @submit.prevent="saveEvent">
-              <div class="mb-3">
-                <label for="eventName" class="form-label">Event Name</label>
-                <input
-                  type="text"
-                  v-model="currentEvent.eventName"
-                  class="form-control"
-                  required
-                />
-              </div>
-              <div class="mb-3">
-                <label for="eventDescription" class="form-label">Description</label>
-                <textarea
-                  v-model="currentEvent.eventDescription"
-                  class="form-control"
-                  required
-                ></textarea>
-              </div>
-              <div class="mb-3">
-                <label for="eventDate" class="form-label">Date</label>
-                <input
-                  type="datetime-local"
-                  v-model="currentEvent.eventDate"
-                  class="form-control"
-                  required
-                />
-              </div>
-              <div class="mb-3">
-                <label for="participants" class="form-label">Participants</label>
-                <input
-                  type="text"
-                  v-model="newParticipant"
-                  class="form-control"
-                  placeholder="Add a participant"
-                />
-                <button
-                  type="button"
-                  @click="addParticipant"
-                  class="btn btn-secondary mt-2"
-                >
-                  Add Participant
-                </button>
-                <ul>
-                  <li v-for="(participant, index) in currentEvent.participants" :key="index">
-                    {{ participant }}
-                    <button
-                      type="button"
-                      @click="removeParticipant(index)"
-                      class="btn btn-sm btn-danger"
-                    >
-                      Remove
-                    </button>
-                  </li>
-                </ul>
-              </div>
-              <button type="submit" class="btn btn-primary">
-                {{ isEditing ? "Save Changes" : "Add Event" }}
-              </button>
-            </form>
+            <div class="delete-confirmation">
+              <p>Are you sure you want to delete the event "{{ eventToDelete?.eventName }}"?</p>
+              <p class="warning-text">This action cannot be undone.</p>
+            </div>
+          </div>
+          
+          <div class="modal-footer">
+            <button @click="closeDeleteModal" class="cancel-btn">Cancel</button>
+            <button @click="confirmDelete" class="delete-confirm-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              Delete Event
+            </button>
           </div>
         </div>
       </div>
@@ -165,27 +348,43 @@
 </template>
 
 <script>
-import HeaderComponent from "../../../public/global/headerComponent.vue";
-import FooterComponent from "../../../public/global/footerComponent.vue";
+import HeaderComponent from '../../../public/global/headerComponent.vue';
+import FooterComponent from '../../../public/global/footerComponent.vue';
 
 export default {
-  name: "AdminPanelEvents",
+  name: 'AdminPanelEvents',
   components: { HeaderComponent, FooterComponent },
   data() {
     return {
       isAuthenticated: false,
       events: [],
-      filterEventName: "",
-      filterEventDate: "",
+      filterEventName: '',
+      filterEventDate: '',
       showEventModal: false,
       isEditing: false,
       currentEvent: {
-        eventName: "",
-        eventDescription: "",
-        eventDate: "",
+        eventName: '',
+        eventDescription: '',
+        eventDate: '',
         participants: [],
       },
-      newParticipant: "",
+      newParticipant: {
+        studentId: '',
+        name: '',
+        email: '',
+        major: ''
+      },
+      notification: {
+        message: '',
+        type: '',
+      },
+      loading: false,
+      isLoading: false,
+      showParticipantsModal: false,
+      selectedEvent: null,
+      showDeleteModal: false,
+      eventToDelete: null,
+      currentDate: new Date(),
     };
   },
   computed: {
@@ -197,9 +396,21 @@ export default {
               .toLowerCase()
               .includes(this.filterEventName.toLowerCase())) &&
           (!this.filterEventDate ||
-            new Date(event.eventDate).toISOString().split("T")[0] ===
+            new Date(event.eventDate).toISOString().split('T')[0] ===
               this.filterEventDate)
         );
+      });
+    },
+    currentMonthDisplay() {
+      return this.currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+    },
+    currentMonthEvents() {
+      const year = this.currentDate.getFullYear();
+      const month = this.currentDate.getMonth();
+      
+      return this.filteredEvents.filter(event => {
+        const eventDate = new Date(event.eventDate);
+        return eventDate.getFullYear() === year && eventDate.getMonth() === month;
       });
     },
   },
@@ -209,32 +420,59 @@ export default {
   },
   methods: {
     checkAuthentication() {
-      this.isAuthenticated = sessionStorage.getItem("isAuthenticated") === "true";
+      this.isAuthenticated = sessionStorage.getItem('isAuthenticated') === 'true';
       if (!this.isAuthenticated) {
-        this.$router.push("/adminpanel"); // Redirect to login if not authenticated
+        this.$router.push('/adminpanel');
       }
-    },
-    logout() {
-      this.isAuthenticated = false;
-      sessionStorage.removeItem("isAuthenticated");
-      this.$router.push("/adminpanel"); // Redirect to login after logout
     },
     async loadEvents() {
+      this.isLoading = true;
       try {
-        const response = await fetch("https://aiusu-backend.vercel.app/events");
-        if (!response.ok) throw new Error("Failed to fetch events");
-        this.events = await response.json();
+        const response = await fetch('https://aiusu-backend.vercel.app/events');
+        if (!response.ok) throw new Error('Failed to fetch events');
+        const events = await response.json();
+        
+        // Fetch all student data
+        const studentResponse = await fetch('https://aiusu-backend.vercel.app/sdata');
+        if (!studentResponse.ok) throw new Error('Failed to fetch student data');
+        const allStudents = await studentResponse.json();
+        
+        // Process each event to get participant details
+        const processedEvents = await Promise.all(events.map(async (event) => {
+          // Get participant details for each ID
+          const participantDetails = event.participants.map(studentId => {
+            const student = allStudents.find(s => s.student_id === studentId);
+            return {
+              studentId: studentId,
+              name: student ? student.student_name : 'Unknown',
+              major: student ? student.student_faculty : 'Unknown'
+            };
+          });
+
+          return {
+            ...event,
+            participants: participantDetails,
+            showParticipants: false
+          };
+        }));
+
+        this.events = processedEvents;
       } catch (error) {
-        console.error("Error loading events:", error);
-        alert("Failed to load events");
+        console.error('Error loading events:', error);
+        this.showNotification('Failed to load events', 'error');
+      } finally {
+        this.isLoading = false;
       }
+    },
+    toggleParticipants(event) {
+      event.showParticipants = !event.showParticipants;
     },
     openAddEventModal() {
       this.isEditing = false;
       this.currentEvent = {
-        eventName: "",
-        eventDescription: "",
-        eventDate: "",
+        eventName: '',
+        eventDescription: '',
+        eventDate: '',
         participants: [],
       };
       this.showEventModal = true;
@@ -242,140 +480,793 @@ export default {
     closeEventModal() {
       this.showEventModal = false;
     },
-    addParticipant() {
-      if (this.newParticipant) {
-        this.currentEvent.participants.push(this.newParticipant);
-        this.newParticipant = "";
+    async addParticipant() {
+      if (this.newParticipant.studentId && this.selectedEvent) {
+        try {
+          const response = await fetch('https://aiusu-backend.vercel.app/sdata');
+          if (!response.ok) throw new Error('Failed to fetch student data');
+          
+          const students = await response.json();
+          const student = students.find(s => s.student_id === this.newParticipant.studentId);
+          
+          if (!student) {
+            throw new Error('Student not found');
+          }
+
+          this.selectedEvent.participants.push({
+            studentId: student.student_id,
+            name: student.student_name,
+            major: student.student_faculty
+          });
+          
+          // Update the event in the main list
+          const eventIndex = this.events.findIndex(e => e._id === this.selectedEvent._id);
+          if (eventIndex !== -1) {
+            this.events[eventIndex] = { ...this.selectedEvent };
+          }
+          
+          this.newParticipant.studentId = '';
+          this.showNotification('Student added successfully');
+        } catch (error) {
+          console.error('Error adding participant:', error);
+          this.showNotification('Failed to add student', 'error');
+        }
       }
     },
     removeParticipant(index) {
-      this.currentEvent.participants.splice(index, 1);
+      if (this.selectedEvent) {
+        this.selectedEvent.participants.splice(index, 1);
+        // Update the event in the main list
+        const eventIndex = this.events.findIndex(e => e._id === this.selectedEvent._id);
+        if (eventIndex !== -1) {
+          this.events[eventIndex] = { ...this.selectedEvent };
+        }
+      }
     },
     async saveEvent() {
+      this.loading = true;
       try {
         const url = this.isEditing
           ? `https://aiusu-backend.vercel.app/events/${this.currentEvent._id}`
-          : "https://aiusu-backend.vercel.app/events";
-        const method = this.isEditing ? "PUT" : "POST";
+          : 'https://aiusu-backend.vercel.app/events';
+        const method = this.isEditing ? 'PUT' : 'POST';
 
         const response = await fetch(url, {
           method,
-          headers: { "Content-Type": "application/json" },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(this.currentEvent),
         });
 
-        if (!response.ok) throw new Error("Failed to save event");
+        if (!response.ok) throw new Error('Failed to save event');
 
         this.showEventModal = false;
-        this.loadEvents(); // Refresh the list
+        this.loadEvents();
+        this.showNotification(
+          this.isEditing ? 'Event updated successfully' : 'Event added successfully'
+        );
       } catch (error) {
-        console.error("Error saving event:", error);
-        alert("Failed to save event");
+        console.error('Error saving event:', error);
+        this.showNotification('Failed to save event', 'error');
+      } finally {
+        this.loading = false;
       }
     },
     editEvent(event) {
       this.isEditing = true;
-      this.currentEvent = { ...event };
+      this.currentEvent = {
+        _id: event._id,
+        eventName: event.eventName,
+        eventDescription: event.eventDescription,
+        eventDate: event.eventDate,
+        participants: event.participants,
+      };
       this.showEventModal = true;
     },
-    async deleteEvent(event) {
-      if (confirm("Are you sure you want to delete this event?")) {
-        try {
-          await fetch(`https://aiusu-backend.vercel.app/events/${event._id}`, {
-            method: "DELETE",
-          });
-          this.events = this.events.filter((e) => e._id !== event._id);
-          alert("Event deleted successfully");
-        } catch (error) {
-          console.error("Error deleting event:", error);
-          alert("Failed to delete event");
-        }
+    deleteEvent(event) {
+      this.eventToDelete = event;
+      this.showDeleteModal = true;
+    },
+    closeDeleteModal() {
+      this.showDeleteModal = false;
+      this.eventToDelete = null;
+    },
+    async confirmDelete() {
+      if (!this.eventToDelete) return;
+      
+      try {
+        await fetch(`https://aiusu-backend.vercel.app/events/${this.eventToDelete._id}`, {
+          method: 'DELETE',
+        });
+        this.events = this.events.filter((e) => e._id !== this.eventToDelete._id);
+        this.showNotification('Event deleted successfully');
+        this.closeDeleteModal();
+      } catch (error) {
+        console.error('Error deleting event:', error);
+        this.showNotification('Failed to delete event', 'error');
       }
     },
     formatDate(date) {
-      return new Date(date).toLocaleString(); // Format date and time
+      return new Date(date).toLocaleString();
+    },
+    resetFilters() {
+      this.filterEventName = '';
+      this.filterEventDate = '';
+    },
+    showNotification(message, type = 'success') {
+      this.notification.message = message;
+      this.notification.type = type;
+      setTimeout(() => {
+        this.notification.message = '';
+      }, 3000);
+    },
+    openParticipantsModal(event) {
+      this.selectedEvent = { ...event };
+      this.showParticipantsModal = true;
+    },
+    closeParticipantsModal() {
+      this.showParticipantsModal = false;
+      this.selectedEvent = null;
+      this.newParticipant.studentId = '';
+    },
+    exportParticipants() {
+      if (!this.selectedEvent) return;
+      
+      const headers = ['Student ID', 'Name', 'Faculty'];
+      const csvContent = [
+        headers.join(','),
+        ...this.selectedEvent.participants.map(p => 
+          [p.studentId, p.name, p.major].join(',')
+        )
+      ].join('\n');
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${this.selectedEvent.eventName}_participants.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    },
+    previousMonth() {
+      const newDate = new Date(this.currentDate);
+      newDate.setMonth(newDate.getMonth() - 1);
+      this.currentDate = newDate;
+    },
+    nextMonth() {
+      const newDate = new Date(this.currentDate);
+      newDate.setMonth(newDate.getMonth() + 1);
+      this.currentDate = newDate;
     },
   },
 };
 </script>
 
 <style scoped>
-.inner-lay {
-  background-color: white;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
-
-.filters {
+/* Modern Admin Styles */
+.modern-admin {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  color: #333;
+  background-color: #f8f9fa;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 20px;
+}
+
+.admin-container {
+  max-width: 1200px;
+  width: 100%;
+  height: calc(100vh - 140px); /* Adjust based on header/footer height */
+  margin: 0 auto;
+  padding: 1.5rem;
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header Styles */
+.admin-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e1e4e8;
+}
+
+.page-title {
+  font-size: 2rem;
+  color: #0f106c;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.page-subtitle {
+  font-size: 1.1rem;
+  color: #666;
+}
+
+/* Section Styles */
+.registrations-section {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  color: #0f106c;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Button Styles */
+.add-btn {
+  padding: 0.75rem 1.5rem;
+  background-color: #0f106c;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.add-btn:hover {
+  background-color: #0c0d5a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Filters */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.filter-group {
+  flex: 1;
+  min-width: 200px;
+}
+
+.filter-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.filter-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.reset-btn {
+  padding: 0.5rem 1rem;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  align-self: flex-end;
+}
+
+.reset-btn:hover {
+  background-color: #5a6268;
+}
+
+/* Table Styles */
+.table-container {
+  flex: 1;
+  overflow-y: auto;
+  margin-top: 1rem;
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+
+.registrations-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.registrations-table th {
+  background-color: #f1f3f5;
+  color: #333;
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 500;
+}
+
+.registrations-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+
+.registrations-table tr:hover {
+  background-color: #f8f9fa;
+}
+
+/* Participants Table */
+.participants-table-container {
+  margin-top: 1rem;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  overflow: auto;
+  max-height: 300px;
+}
+
+.participants-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.participants-table th {
+  background-color: #000;
+  color: white;
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: none;
+}
+
+.participants-table thead {
+  border-bottom: 2px solid #000;
+}
+
+.participants-table td {
+  padding: 0.5rem;
+  border-top: 1px solid #eee;
+}
+
+.view-participants-btn {
+  padding: 0.5rem 1rem;
+  background-color: #e9ecef;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #495057;
+  transition: all 0.3s ease;
+}
+
+.view-participants-btn:hover {
+  background-color: #dee2e6;
+}
+
+/* Action Buttons */
+.actions-col {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.edit-btn, .delete-btn {
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.edit-btn {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.edit-btn:hover {
+  background-color: #e0a800;
+}
+
+.delete-btn {
+  background-color: #dc3545;
+  color: white;
+}
+
+.delete-btn:hover {
+  background-color: #c82333;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-container {
+  background-color: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #0f106c;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: background-color 0.3s;
+}
+
+.close-btn:hover {
+  background-color: #f1f3f5;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #eee;
+}
+
+/* Form Styles */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #555;
 }
 
 .form-control {
-  padding: 10px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-}
-
-.table {
   width: 100%;
-  margin-top: 20px;
-  border-collapse: collapse;
-}
-
-.table th,
-.table td {
-  padding: 10px;
+  padding: 0.75rem;
   border: 1px solid #ddd;
-  text-align: center;
+  border-radius: 6px;
+  font-size: 0.9rem;
 }
 
-.table th {
-  background-color: #0f106c;
-  color: white;
+.form-control:focus {
+  outline: none;
+  border-color: #0f106c;
+  box-shadow: 0 0 0 3px rgba(15, 16, 108, 0.1);
 }
 
-.btn {
-  padding: 5px 10px;
-  border-radius: 5px;
-  cursor: pointer;
-  margin: 2px;
+/* Participants Input */
+.participants-input {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
-.btn-primary {
+.add-participant-btn {
+  padding: 0.5rem 1rem;
   background-color: #0f106c;
   color: white;
   border: none;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
-.btn-danger {
+.remove-participant-btn {
+  background: none;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+  color: #666;
+}
+
+.empty-state svg {
+  color: #999;
+}
+
+/* Loading State */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+}
+
+.loading-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #0f106c;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Notification */
+.notification-box {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1100;
+}
+
+.notification {
+  padding: 1rem 1.5rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: fadeIn 0.5s, fadeOut 0.5s 2.5s forwards;
+}
+
+.notification.success {
+  background-color: #28a745;
+}
+
+.notification.error {
+  background-color: #dc3545;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .admin-container {
+    padding: 1rem;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .filters {
+    flex-direction: column;
+  }
+  
+  .filter-group {
+    min-width: 100%;
+  }
+  
+  .registrations-table {
+    font-size: 0.8rem;
+  }
+  
+  .registrations-table th, 
+  .registrations-table td {
+    padding: 0.5rem;
+  }
+  
+  .edit-btn, 
+  .delete-btn {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
+  }
+  
+  .modal-container {
+    max-height: 80vh;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-title {
+    font-size: 1.5rem;
+  }
+  
+  .modal-footer {
+    flex-direction: column;
+  }
+  
+  .modal-btn {
+    width: 100%;
+  }
+}
+
+/* Participants Modal Specific Styles */
+.add-participant-section {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.export-btn {
+  padding: 0.75rem 1.5rem;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.export-btn:hover {
+  background-color: #218838;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Delete Modal Styles */
+.delete-modal {
+  max-width: 500px;
+  max-height: 400px;
+}
+
+.delete-confirmation {
+  text-align: center;
+  padding: 1rem;
+}
+
+.delete-confirmation p {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.warning-text {
+  color: #dc3545;
+  font-weight: 500;
+}
+
+.delete-confirm-btn {
+  padding: 0.75rem 1.5rem;
   background-color: #dc3545;
   color: white;
   border: none;
-}
-
-.custom-btn {
-  background-color: #c42326;
-  color: white;
-  padding: 10px;
-  display: block;
-  width: 100%;
-  margin-top: 20px;
-  border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
 }
 
-.custom-btn:hover {
-  background-color: white;
-  color: #c42326;
-  border: 1px solid #c42326;
+.delete-confirm-btn:hover {
+  background-color: #c82333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.modal {
-  background-color: rgba(0, 0, 0, 0.5);
+/* Month Selector Styles */
+.month-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.current-month {
+  font-size: 1.25rem;
+  color: #0f106c;
+  margin: 0;
+  min-width: 200px;
+  text-align: center;
+}
+
+.month-nav-btn {
+  background: none;
+  border: none;
+  color: #0f106c;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.month-nav-btn:hover {
+  background-color: #e9ecef;
+  transform: scale(1.1);
 }
 </style>

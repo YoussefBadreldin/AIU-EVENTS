@@ -1,59 +1,100 @@
 <template>
-  <div>
+  <div class="modern-home">
     <HeaderComponent />
-    <div class="container">
-      <h2 class="text-center my-4">Events Calendar</h2>
+    <div class="calendar-container">
+      <div class="calendar-header">
+        <h2>Events Calendar</h2>
+        <p class="subtitle">Alamein International University</p>
+      </div>
 
       <!-- Calendar Component -->
-      <FullCalendar
-        ref="calendar"
-        :options="calendarOptions"
-        @dateClick="handleDateClick"
-        @eventClick="handleEventClick"
-      />
+      <div class="calendar-wrapper">
+        <FullCalendar
+          ref="calendar"
+          :options="calendarOptions"
+          @dateClick="handleDateClick"
+          @eventClick="handleEventClick"
+        />
+      </div>
 
       <!-- Event Details Modal -->
-      <div v-if="selectedEvent" class="modal fade show" v-show="showModal" style="display: block" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="eventModalLabel">{{ selectedEvent.title }}</h5>
-              <button type="button" class="btn-close" @click="closeModal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-              <p><strong>Description:</strong> {{ selectedEvent.description }}</p>
-              <p><strong>Date:</strong> {{ selectedEvent.start }}</p>
-              <div v-if="selectedEvent.participants && selectedEvent.participants.length > 0">
-                <p><strong>Current Participants:</strong></p>
-                <ul>
-                  <li v-for="(participant, index) in selectedEvent.participants" :key="index">{{ participant }}</li>
-                </ul>
+      <div v-if="selectedEvent" class="modal-overlay" v-show="showModal">
+        <div class="modal-container">
+          <div class="modal-header">
+            <h3 class="modal-title">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              {{ selectedEvent.title }}
+            </h3>
+            <button @click="closeModal" class="close-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          
+          <div class="modal-body">
+            <div class="event-details">
+              <div class="detail-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span>{{ selectedEvent.start }}</span>
               </div>
-              
-              <!-- Registration Form -->
-              <div class="registration-form mt-4">
-                <h6>Register for this Event</h6>
-                <form @submit.prevent="handleRegistration">
-                  <div class="form-group mb-3">
-                    <label for="studentId">Student ID:</label>
-                    <input 
-                      type="text" 
-                      class="form-control" 
-                      id="studentId" 
-                      v-model="registrationId"
-                      required
-                      placeholder="Enter your student ID"
-                    />
-                  </div>
-                  <div v-if="registrationMessage" :class="['alert', registrationSuccess ? 'alert-success' : 'alert-danger']">
-                    {{ registrationMessage }}
-                  </div>
-                  <button type="submit" class="btn btn-primary">Register</button>
-                </form>
+              <div class="detail-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span>{{ selectedEvent.description }}</span>
               </div>
             </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" @click="closeModal">Close</button>
+
+            <div v-if="selectedEvent.participants && selectedEvent.participants.length > 0" class="participants-section">
+              <h4>Current Participants</h4>
+              <div class="participants-list">
+                <div v-for="(participant, index) in selectedEvent.participants" :key="index" class="participant-item">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                  <span>{{ participant }}</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Registration Form -->
+            <div class="registration-form">
+              <h4>Register for this Event</h4>
+              <form @submit.prevent="handleRegistration">
+                <div class="form-group">
+                  <label for="studentId">Student ID</label>
+                  <input 
+                    type="text" 
+                    id="studentId" 
+                    v-model="registrationId"
+                    required
+                    placeholder="Enter your student ID"
+                  />
+                </div>
+                <div v-if="registrationMessage" :class="['notification', registrationSuccess ? 'success' : 'error']">
+                  {{ registrationMessage }}
+                </div>
+                <button type="submit" class="register-btn">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <line x1="20" y1="8" x2="20" y2="14"></line>
+                    <line x1="23" y1="11" x2="17" y2="11"></line>
+                  </svg>
+                  Register
+                </button>
+              </form>
             </div>
           </div>
         </div>
@@ -207,77 +248,276 @@ export default {
 </script>
 
 <style scoped>
-.container {
-  padding: 20px;
+.modern-home {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  display: flex;
+  flex-direction: column;
 }
 
-/* FullCalendar styling */
+.calendar-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  flex: 1;
+}
+
+.calendar-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.calendar-header h2 {
+  color: #0f106c;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.calendar-wrapper {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Calendar Styling */
 :deep(.fc) {
-  direction: ltr; /* Left-to-right layout */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 :deep(.fc-header-toolbar) {
-  margin-bottom: 1em;
+  margin-bottom: 1.5rem !important;
 }
 
 :deep(.fc-toolbar-title) {
-  font-size: 1.5em;
+  font-size: 1.5rem !important;
+  color: #0f106c;
+}
+
+:deep(.fc-button-primary) {
+  background-color: #0f106c !important;
+  border-color: #0f106c !important;
+}
+
+:deep(.fc-button-primary:hover) {
+  background-color: #0c0d5a !important;
+  border-color: #0c0d5a !important;
 }
 
 :deep(.fc-daygrid-event) {
-  cursor: pointer;
-  display: flex; /* Use Flexbox for centering */
-  align-items: center; /* Center vertically */
-  justify-content: center; /* Center horizontally */
-  text-align: center; /* Ensure text is centered */
-  height: 100%; /* Ensure the event takes full height of the cell */
+  background-color: #0f106c !important;
+  border-color: #0f106c !important;
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
 :deep(.event-title) {
-  font-size: 14px; /* Adjust font size as needed */
-  padding: 5px; /* Add padding for better spacing */
-  word-break: break-word; /* Ensure long titles wrap */
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
-/* Modal styling */
-.modal-content {
-  direction: ltr;
+/* Modal Styling */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-container {
+  background-color: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
 }
 
 .modal-header {
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #dee2e6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #eee;
 }
 
 .modal-title {
-  font-weight: bold;
+  margin: 0;
+  font-size: 1.25rem;
+  color: #0f106c;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: background-color 0.3s;
+}
+
+.close-btn:hover {
+  background-color: #f1f3f5;
 }
 
 .modal-body {
-  padding: 20px;
+  padding: 1.5rem;
 }
 
-/* Responsive adjustments */
+.event-details {
+  margin-bottom: 1.5rem;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  color: #555;
+}
+
+.participants-section {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.participants-section h4 {
+  color: #0f106c;
+  margin-bottom: 1rem;
+}
+
+.participants-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.5rem;
+}
+
+.participant-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background-color: white;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.registration-form {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #eee;
+}
+
+.registration-form h4 {
+  color: #0f106c;
+  margin-bottom: 1rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #555;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #0f106c;
+  box-shadow: 0 0 0 3px rgba(15, 16, 108, 0.1);
+}
+
+.register-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #0f106c;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.register-btn:hover {
+  background-color: #0c0d5a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.notification {
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.notification.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.notification.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+/* Responsive Styles */
 @media (max-width: 768px) {
-  :deep(.fc-header-toolbar) {
-    flex-direction: column;
-    align-items: center;
+  .calendar-container {
+    padding: 1rem;
   }
 
-  :deep(.fc-toolbar-title) {
-    font-size: 1.2em;
+  .calendar-header h2 {
+    font-size: 1.5rem;
   }
 
-  :deep(.fc-button-group) {
-    margin-top: 10px;
+  .calendar-wrapper {
+    padding: 1rem;
   }
 
-  .modal-dialog {
-    margin: 10px;
+  .modal-container {
+    margin: 1rem;
+    max-height: 90vh;
   }
 
-  :deep(.event-title) {
-    font-size: 12px; /* Smaller font size for mobile */
+  .participants-list {
+    grid-template-columns: 1fr;
   }
 }
 </style>

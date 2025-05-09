@@ -45,29 +45,29 @@
             </button>
           </div>
 
-          <!-- Filters -->
+              <!-- Filters -->
           <div class="filters">
             <div class="filter-group">
               <label for="filter-event-name" class="filter-label">Event Name</label>
-              <input
-                type="text"
-                v-model="filterEventName"
+                <input
+                  type="text"
+                  v-model="filterEventName"
                 id="filter-event-name"
                 class="filter-input"
-                placeholder="Search by event name"
-              />
+                  placeholder="Search by event name"
+                />
             </div>
             
             <div class="filter-group">
               <label for="filter-event-date" class="filter-label">Date</label>
-              <input
-                type="date"
-                v-model="filterEventDate"
+                <input
+                  type="date"
+                  v-model="filterEventDate"
                 id="filter-event-date"
                 class="filter-input"
-              />
-            </div>
-            
+                />
+              </div>
+
             <button @click="resetFilters" class="reset-btn">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="1 4 1 10 7 10"></polyline>
@@ -91,50 +91,57 @@
                 <polyline points="9 18 15 12 9 6"></polyline>
               </svg>
             </button>
+            <button @click="goToToday" class="today-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              Today
+            </button>
           </div>
 
-          <!-- Events Table -->
+              <!-- Events Table -->
           <div class="table-container">
             <table class="registrations-table">
-              <thead>
-                <tr>
-                  <th>Event Name</th>
-                  <th>Description</th>
-                  <th>Date</th>
-                  <th>Participants</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
+                <thead>
+                  <tr>
+                    <th>Event Name</th>
+                    <th>Description</th>
+                    <th>Date</th>
+                    <th>Participants</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
                 <tr v-for="event in currentMonthEvents" :key="event._id">
-                  <td>{{ event.eventName }}</td>
-                  <td>{{ event.eventDescription }}</td>
-                  <td>{{ formatDate(event.eventDate) }}</td>
-                  <td>
+                    <td>{{ event.eventName }}</td>
+                    <td>{{ event.eventDescription }}</td>
+                    <td>{{ formatDate(event.eventDate) }}</td>
+                    <td>
                     <button @click="openParticipantsModal(event)" class="view-participants-btn">
                       View Participants ({{ event.participants.length }})
                     </button>
-                  </td>
+                    </td>
                   <td class="actions-col">
                     <button @click="editEvent(event)" class="edit-btn">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                       </svg>
-                      Edit
-                    </button>
+                        Edit
+                      </button>
                     <button @click="deleteEvent(event)" class="delete-btn">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="3 6 5 6 21 6"></polyline>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                       </svg>
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
           <div v-if="currentMonthEvents.length === 0" class="empty-state">
             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -143,11 +150,11 @@
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
             <p>No events found</p>
-          </div>
         </div>
       </div>
+    </div>
 
-      <!-- Add/Edit Event Modal -->
+    <!-- Add/Edit Event Modal -->
       <div v-if="showEventModal" class="modal-overlay">
         <div class="modal-container">
           <div class="modal-header">
@@ -272,9 +279,9 @@
                     <td>{{ participant.name }}</td>
                     <td>{{ participant.major }}</td>
                     <td>
-                      <button
-                        type="button"
-                        @click="removeParticipant(index)"
+                    <button
+                      type="button"
+                      @click="removeParticipant(index)"
                         class="remove-participant-btn"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -319,7 +326,7 @@
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
-            </button>
+                    </button>
           </div>
           
           <div class="modal-body">
@@ -327,7 +334,7 @@
               <p>Are you sure you want to delete the event "{{ eventToDelete?.eventName }}"?</p>
               <p class="warning-text">This action cannot be undone.</p>
             </div>
-          </div>
+              </div>
           
           <div class="modal-footer">
             <button @click="closeDeleteModal" class="cancel-btn">Cancel</button>
@@ -337,7 +344,7 @@
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
               </svg>
               Delete Event
-            </button>
+              </button>
           </div>
         </div>
       </div>
@@ -573,14 +580,14 @@ export default {
     async confirmDelete() {
       if (!this.eventToDelete) return;
       
-      try {
+        try {
         await fetch(`https://aiusu-backend.vercel.app/events/${this.eventToDelete._id}`, {
           method: 'DELETE',
-        });
+          });
         this.events = this.events.filter((e) => e._id !== this.eventToDelete._id);
         this.showNotification('Event deleted successfully');
         this.closeDeleteModal();
-      } catch (error) {
+        } catch (error) {
         console.error('Error deleting event:', error);
         this.showNotification('Failed to delete event', 'error');
       }
@@ -640,6 +647,9 @@ export default {
       const newDate = new Date(this.currentDate);
       newDate.setMonth(newDate.getMonth() + 1);
       this.currentDate = newDate;
+    },
+    goToToday() {
+      this.currentDate = new Date();
     },
   },
 };
@@ -1268,5 +1278,25 @@ export default {
 .month-nav-btn:hover {
   background-color: #e9ecef;
   transform: scale(1.1);
+}
+
+.today-btn {
+  padding: 0.5rem 1rem;
+  background-color: #0f106c;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.today-btn:hover {
+  background-color: #0c0d5a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 </style>

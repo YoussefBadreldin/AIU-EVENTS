@@ -2,7 +2,7 @@
   <div>
     <HeaderComponent />
     <div class="container">
-      <h2 class="text-center my-4">Activity Calendar</h2>
+      <h2 class="text-center my-4">Events Calendar</h2>
 
       <!-- Calendar Component -->
       <FullCalendar
